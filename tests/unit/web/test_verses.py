@@ -30,7 +30,9 @@ def _hmz(*names: str, fixed: tuple[str, ...] = ()) -> Any:
 
 
 def test_this_projects_flows_and_yours_are_no_flowverse() -> None:
-    hmz = _hmz("official", "theirs", "local", "user", fixed=("official", "local", "user"))
+    hmz = _hmz(
+        "official", "theirs", "local", "user", fixed=("official", "local", "user")
+    )
 
     verses = listed(hmz)["verses"]
 
