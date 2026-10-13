@@ -3,9 +3,10 @@
 Each `hmz web` serves its own machine's notices -- an epic ended, a chat's turn done, a flow
 asking a person or waiting for what to say next. The interface a person has open is told them
 of every daemon at once: this machine's as they are heard, and each SSH daemon's, while it is
-reached, off the stream its own interface serves. Each is told by which daemon said it, kept only where the kinds
-a person wants to be told of say so, and kept a while -- the last few hundred -- with whether it
-was read, for every page this interface serves to follow from where it last heard.
+reached, off the stream its own interface serves. Each is told by which daemon said it, kept
+only where the kinds a person wants to be told of say so, and kept a while -- the last few
+hundred -- with whether it was read, for every page this interface serves to follow from where
+it last heard.
 
 Which kinds are told, and whether the system is asked to show them too, are the app's own
 settings, kept under `notifications` in this machine's `settings.yaml` and never a daemon's.
