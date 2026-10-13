@@ -10009,7 +10009,9 @@ class Does(Picks):
                 "the entire run as an archive, with its trace",
             )
         )
-        held.append((_EXOMYTH, "Exomyth", "the epic as a timeline of its sessions"))
+        # Not for a chat, which is one conversation rather than sessions to lay out in time.
+        if self._ran.flow != "chat":
+            held.append((_EXOMYTH, "Exomyth", "the epic as a timeline of its sessions"))
         if self._uploads:
             held.append(
                 (_UPLOADS, "upload", "back the epic up to its targets, or the defaults")

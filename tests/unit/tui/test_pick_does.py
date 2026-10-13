@@ -20,11 +20,12 @@ def _does(
     foreign: str = "",
     uploads: bool = False,
     backed: dict[str, dict[str, object]] | None = None,
+    flow: str = "ralph",
 ) -> pick.Does:
     ran = SimpleNamespace(
         at=Path("/epics/one"),
         began="2026-10-12T01:02:03Z",
-        flow="ralph",
+        flow=flow,
         how="done",
         agents={},
         sessions=[],
@@ -63,6 +64,12 @@ def test_does_offers_resume_only_where_it_can_and_says_why_not(
 
     assert [one[0] for one in does.rows()] == rows
     assert does.nothing() == said
+
+
+def test_does_offers_no_exomyth_for_a_chat() -> None:
+    does = _does(resumable=False, flow="chat")
+
+    assert [one[0] for one in does.rows()] == ["export"]
 
 
 def test_does_offers_upload_where_there_is_a_target_and_says_how_backups_went() -> None:

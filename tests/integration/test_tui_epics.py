@@ -41,12 +41,12 @@ def workspace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, asking: None) -> 
 
 
 async def chatted(pilot: Pilot[None]) -> None:
-    """Runs chat for one turn, and stops it."""
+    """Runs chat for one turn, and ends it with `/clear`."""
     await opened(pilot)
     await typed(pilot, "hello")
     await shows(pilot, "heard hello")
-    await typed(pilot, "/stop")
-    await shows(pilot, "stopping the flow")
+    await typed(pilot, "/clear")
+    await shows(pilot, "◉ chat")
 
 
 async def test_with_no_runs_epics_and_resume_say_there_is_nothing(
