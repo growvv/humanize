@@ -1748,6 +1748,7 @@ role.
 | [`continue_loop`](https://humanfia.ai/flows/continue-loop) | `agent` | | | required | what each role declares |
 | [`goal`](https://humanfia.ai/flows/goal) | `worker` | `GoalCommandAgentMixin` | | required | what each role declares |
 | [`flame_chase`](https://humanfia.ai/flows/flame-chase) | `first_chaser`, `second_chaser` | | ✓ | required | what each role declares |
+| [`fork_and_flush`](https://humanfia.ai/flows/fork-and-flush) | `explorer_1` (required), `explorer_2` … `explorer_4` (optional), `judge` (optional when `grader_command` is set) | `judge`: read-only; `workspace`: `ShellEnvMixin`, `TemporaryClonedDirEnvMixin` | | required | what each role declares |
 | [`rlar`](https://humanfia.ai/flows/rlar) | `actor`, `reviewer` | | ✓ | required | what each role declares |
 
 `chat` opens one session and takes one turn per line the outworlder says; under `hmz exec`
@@ -1756,6 +1757,75 @@ outworlder as the conversation itself: its wait for the next line is no separate
 follow-up or steer typed in the assistant's conversation is that line, and the agent's own
 questions show there with their options. The first turn's failure ends
 the run; later failures are reported and the conversation continues.
+
+`fork_and_flush` makes up to four isolated copies of the current trunk, gives each a fresh agent
+session, and runs each for `explore_turns`. It scores each result with either a deterministic
+command or a separate `judge` agent in a fresh session. Set `-p grader_command=./grade.sh` to
+run a command in each candidate workspace. The command receives the task in `HMZ_TASK`, must
+exit successfully, and must print only an integer score from 0 to 100 on stdout. If
+`grader_command` is unset, configure the `judge` role; if both are set, the command takes
+precedence. Both forms use the same score range, and the higher score wins.
+
+The highest-scoring branch becomes the trunk. Its explorer continues in that same copy for
+`exploit_turns` attempts before the next fork. Each attempt is scored; a result replaces the
+best-known trunk only when its score is higher. Otherwise the flow restores a temporary
+checkpoint and starts the next attempt with a fresh session. `forks` defaults to four and may be
+set from one to four; provide at least that many explorer roles (`explorer_1` is the only
+required role in the flow contract). `explore_turns` defaults to one and `exploit_turns` defaults
+to four. Each explorer turn and each grading call counts as one `budget.rounds` round. With four
+explorers and the defaults, 40 rounds fund the initial fork, two later forks, and the exploitation
+between them. The fork width shrinks to fit the remaining budget; if what remains cannot fund a
+full fork or an exploit attempt and its score, the flow stops cleanly after its current trunk
+work. It needs an environment that can make temporary clones and run shell commands, and it is
+not resumable.
+
+For a deterministic grader, put a task-specific script such as `grade.sh` in the project. It runs
+from each candidate's workspace; read the task from `HMZ_TASK` and print the score to stdout:
+
+```sh
+#!/bin/sh
+set -eu
+# Replace this check with the project's deterministic grader.
+if pytest -q >&2; then
+    echo 100
+else
+    echo 0
+fi
+```
+
+Make it executable with `chmod +x grade.sh`.
+
+Run four explorers with that grader:
+
+```sh
+hmz exec -f fork_and_flush \
+    -a explorer_1=codex/gpt-5.6-sol:high \
+    -a explorer_2=claude/claude-sonnet-5-5:high \
+    -a explorer_3=codex/gpt-5.6-sol:high \
+    -a explorer_4=claude/claude-sonnet-5-5:high \
+    -p grader_command=./grade.sh \
+    -p budget.rounds=40,budget.cost=10 \
+    "improve the implementation while keeping all checks passing"
+```
+
+If the task has no deterministic grader, omit `grader_command` and configure a separate judge
+agent instead:
+
+```sh
+hmz exec -f fork_and_flush \
+    -a explorer_1=codex/gpt-5.6-sol:high \
+    -a explorer_2=claude/claude-sonnet-5-5:high \
+    -a explorer_3=codex/gpt-5.6-sol:high \
+    -a explorer_4=claude/claude-sonnet-5-5:high \
+    -a judge=claude/claude-opus-5:high \
+    -p budget.rounds=40,budget.cost=10 \
+    "explore and improve the solution"
+```
+
+This flow adapts the periodic fork-and-flush strategy from [Cai et al., *Fork-and-Flush:
+Escaping Idea Basins in Autoresearch Agents*](https://arxiv.org/abs/2610.07447). It keeps the
+paper's fresh-context branches and winner adoption, with turn-based budgets and either a
+deterministic scorer or an agent judge.
 
 The loops are each the plainest form of their idea, written to be read and copied. They run
 until their budget is spent (`rlar` also until its reviewer says done), and a turn that fails

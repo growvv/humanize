@@ -1,10 +1,10 @@
-"""The flows humanize keeps in the package: `chat`, and the six loops everybody reaches for.
+"""The flows humanize keeps in the package: `chat`, and the loops everybody reaches for.
 
 `chat` is one agent talking: the flow an interface opens on, and the shortest thing there is
-that shows what a flow is. Beside it are the loops
-[FlowBench](https://humanfia.ai/projects/flowbench) scores, under the same names --
-`ralph_loop`, `stateful_ralph`, `continue_loop`, `goal`, `flame_chase` and `rlar`. They are here
-rather than in the [official flowverse](https://github.com/humanfia/flowverse) because they are
+that shows what a flow is. Beside it are `ralph_loop`, `stateful_ralph`, `continue_loop`,
+`goal`, `flame_chase`, `fork_and_flush` and `rlar`. `fork_and_flush` brings periodic branching
+to the built-in loops. They are here rather than in the
+[official flowverse](https://github.com/humanfia/flowverse) because they are
 what humanize is for before anything has been fetched: a machine that has never reached a
 network still has to have something to open talking to and a loop to leave running, and a first
 run that had to clone before it could do either would be a first run that failed on the train.

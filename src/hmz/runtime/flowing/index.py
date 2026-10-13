@@ -102,6 +102,7 @@ RESERVED = frozenset(
         "chat",
         "continue_loop",
         "flame_chase",
+        "fork_and_flush",
         "goal",
         "ralph_loop",
         "rlar",

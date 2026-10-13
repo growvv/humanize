@@ -136,6 +136,29 @@ def test_flame_chase_passes_the_task_between_two_chasers(project: Path) -> None:
     assert second.prompts == ["the task"]
 
 
+def test_fork_and_flush_runs_a_scored_branch_in_a_temporary_workspace(project: Path) -> None:
+    explorer = _agent(cost=0.0)
+    judge = _agent({"score": 82, "rationale": "the candidate completed the task"}, cost=0.0)
+
+    Hmz(project).run(
+        "fork_and_flush",
+        "complete the task",
+        agents={
+            "explorer_1": explorer,
+            "explorer_2": _agent(cost=0.0),
+            "explorer_3": _agent(cost=0.0),
+            "explorer_4": _agent(cost=0.0),
+            "judge": judge,
+        },
+        params={"forks": 1},
+        budget={"rounds": 2, "cost": 1},
+    ).run()
+
+    assert explorer.prompts == ["complete the task"]
+    assert len(judge.prompts) == 1
+    assert "Candidate 1 of 1" in judge.prompts[0]
+
+
 def test_rlar_ends_when_the_reviewer_says_it_is_done(project: Path) -> None:
     actor = _agent(cost=0.0)
     reviewer = _agent({"done": True, "notes": "all of it, tested"}, cost=0.0)
