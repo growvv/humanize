@@ -952,6 +952,7 @@ class Call:
     @property
     def budget(self) -> Budget:
         cost = tokens = _INF
+        rounds = _INF
         graceful = True
         node: Call | None = self
         with self.run.lock:
@@ -964,6 +965,8 @@ class Call:
                         tokens = min(
                             tokens, own.output_tokens - node.tokens + self.tokens
                         )
+                    if own.rounds is not None:
+                        rounds = min(rounds, own.rounds)
                     if not own.graceful:
                         graceful = False
                 node = node.parent
@@ -977,6 +980,7 @@ class Call:
             duration=duration,
             cost=None if cost == _INF and (tokens != _INF or duration) else cost,
             output_tokens=None if tokens == _INF else max(int(tokens), 0),
+            rounds=None if rounds == _INF else max(int(rounds), 0),
             graceful=graceful,
         )
 

@@ -239,6 +239,7 @@ class Budget(pydantic.BaseModel):
       duration: How long it may take, counted from when it started.
       cost: How much it may spend, in USD.
       output_tokens: How many tokens its agents may write.
+      rounds: How many turns a flow may run, where that flow supports a round limit.
       graceful: Whether the turn under way when the budget is spent is let finish before the
         flow is stopped, or is interrupted at once.
 
@@ -255,13 +256,19 @@ class Budget(pydantic.BaseModel):
     )
     cost: float | None = pydantic.Field(default=None, ge=0)
     output_tokens: int | None = pydantic.Field(default=None, ge=0)
+    rounds: int | None = pydantic.Field(default=None, ge=0)
     graceful: bool = True
 
     @pydantic.model_validator(mode="after")
     def _limits_something(self) -> Self:
-        if self.duration is None and self.cost is None and self.output_tokens is None:
+        if (
+            self.duration is None
+            and self.cost is None
+            and self.output_tokens is None
+            and self.rounds is None
+        ):
             raise ValueError(
-                "a budget sets at least one of duration, cost, output_tokens"
+                "a budget sets at least one of duration, cost, output_tokens, rounds"
             )
         return self
 

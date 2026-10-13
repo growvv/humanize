@@ -42,7 +42,7 @@ async def test_the_chasers_take_turns_each_in_a_fresh_session(chase: Any) -> Non
     assert doubles.prompts(first) == ["the task"] * 2
     assert doubles.prompts(second) == ["the task"] * 2
     assert len(set(map(id, doubles.sessions(first) + doubles.sessions(second)))) == 4
-    assert state == {"turn": 1}
+    assert state == {"turn": 1, "rounds": 1}
 
 
 async def test_a_failed_turn_ends_the_run(chase: Any) -> None:
