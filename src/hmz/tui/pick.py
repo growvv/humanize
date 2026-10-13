@@ -114,7 +114,6 @@ if TYPE_CHECKING:
 
 __all__ = [
     "DETACHES",
-    "EVERY",
     "EXPORTED",
     "RESUMES",
     "STAYS",
@@ -10697,13 +10696,3 @@ class Epics(Sheet[Doing]):
             self._fill()
             return
         self.dismiss(Doing(ran.at, said, tuple(self._told)))
-
-
-#: The transcript every agent's work appears on, which is what the first node of the monitor
-#: reads and what the log opens on. Written down once, here, and read from `hmz.tui.app` and
-#: `hmz.tui.monitoring` rather than said again there: two names for it are two that could come
-#: apart.
-#:
-#: Nobody's, since it is not an agent's: an agent id is what every other transcript is kept
-#: under, and no agent is called this.
-EVERY = ""
