@@ -219,6 +219,8 @@ prompt at the bottom, so every command works on either.
 The monitor draws the run as **nodes**:
 
 - `▣ all agents`, always first: the log every agent's work appears on.
+- `◫ epic`: the run itself, how it stands and its budget against what it has spent. Enter on
+  it opens its page.
 - `◉` an **outworlder**, where the flow talks to you (for example `◉ human · outworlder:
   messages from the flow to you`).
 - a **box per agent** that has taken a turn, in the order the flow declares them. An agent is
@@ -352,6 +354,17 @@ With the mouse, a click on the left edge of a box, where its `▸` is, opens it 
 and so does a click on the agent the cursor is already on. A click anywhere else on an agent
 only moves the cursor there, and a double click reads it.
 
+## The epic's page
+
+<kbd>enter</kbd> or a click on `◫ epic` opens the run's own page, the same content as the epic
+panel of [the web page](/user/web): `Figures` (time, spend, tokens), `Budget` (each limit with
+what has gone of it, as a meter), `Set up` (the flow, task, agents, environments, params, and
+whether it is profiled) and `Flows` (the flows called). It stays live.
+
+Under it, for every flow but a chat, is `Stop` while the run runs and `Force stop` while it
+winds down. <kbd>tab</kbd> reaches the button; each asks before it acts. See
+[Stopping](/user/stopping).
+
 ## Environments
 
 Under each session is the environment it works in: `▤`, the environment role the flow gave it,
@@ -403,7 +416,7 @@ drawing, above the prompt.
 | --- | --- |
 | <kbd>↑</kbd> <kbd>↓</kbd> | With nothing typed: move between the nodes. |
 | <kbd>space</kbd> | With nothing typed: open the agent under the cursor out to its sessions, or shut it. |
-| <kbd>enter</kbd> | With nothing typed: read that node's log. On an environment, open its page. On a line of the board, change it. |
+| <kbd>enter</kbd> | With nothing typed: read that node's log. On the epic or an environment, open its page. On a line of the board, change it. |
 | a click | What <kbd>enter</kbd> does. On an agent: on its `▸`, or on the one already picked, open it out or shut it; elsewhere, pick it; twice, read it. |
 | <kbd>→</kbd> | With nothing typed: back to the log you were reading. |
 | <kbd>ctrl+t</kbd> | The graph, or the list. |

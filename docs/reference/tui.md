@@ -1728,6 +1728,7 @@ node's view. Commands work from its prompt as on the aggregate (view kind `monit
 ```text
    graph  list
 ❯ ▣ all agents · 1 of 2 working · 17 turns · 7m11s · reading
+  ◫ epic · running · cost $1.34 of $5.00 · time 7m11s of 1h00m
   ◉ human · outworlder: messages from the flow to you · yours
   ┌──────────────────────────────────────────────────────────────────────┐
   │ ▸ ● builder                                                      43s │
@@ -1764,11 +1765,12 @@ Kinds:            input                         1.2k
 
 ### Nodes {#monitor-nodes}
 
-In order: the all-agents node, outworlder nodes, the graph or list, the board.
+In order: the all-agents node, the epic node, outworlder nodes, the graph or list, the board.
 
 | Node | Format | `enter` / click |
 | --- | --- | --- |
 | all agents | `▣ all agents · <w> of <n> working · <t> turn(s) · <clock>[ · reading]`; `<n>` agents drawn, `<t>` all their turns, `<clock>` the run's age | reads the aggregate |
+| epic | `◫ epic · running\|stopping\|over · <limit> <spent> of <allowed>[ · …]`, or `no limit`; shown once a run has started | opens its [page](#the-epic-s-page) |
 | outworlder | `◉ <role> · outworlder: messages from the flow to you[ · yours\|<name>'s][ · reading]`; declared order, then order first asked | reads its view |
 | agent box | see [Graph](#monitor-graph) | reads the role's view |
 | session | see Graph | reads `<agent>/<n>` |
@@ -1862,6 +1864,24 @@ run: `This environment is not in the run.`
 | `Sessions` | `●\|○ <role> · session <n> · <spec>` (or the bare key before its first turn); `enter` or a click reads it and leaves the monitor. |
 
 Empty rows are omitted.
+
+### Epic page {#the-epic-s-page}
+
+A menu over the monitor: `monitor › <task>`. About: `Running.`, `Stopping.` or `Over.`.
+Redrawn every 0.5 s. `↑` `↓` walk its rows; `esc`, `←`, `backspace` or a click on `monitor` go
+back. The same content as the web's epic panel:
+
+| Heading | Rows |
+| --- | --- |
+| `Figures` | `time` (`<clock> elapsed`, or `total` once over), `spent` (`$<cost> · <n> out/s`, as the [cost readout](#cost-readout)'s second line, or `nothing yet`), `tokens` (by kind, its first line, or `none yet`) |
+| `Budget` | per limit set -- `cost`, `output`, `time` -- `<spent> of <allowed>` and a ten-cell meter with its share, red once spent; then `when spent`: `the last turn finishes` or `cut off at once`. A budget with no measurable limit: `limit none`. |
+| `Set up` | `flow`, `task`, `agents` (`[<name> · ]<role>=<spec>` each), `envs` (`<role>=<spec>`), `params` (`<name>=<JSON>`), `profiled` (`flow`, `environment`, both, `yes` or `no`) |
+| `Flows` | the flow started and each it called, innermost last, with how long each has run |
+
+Buttons, for every flow but `chat`: `Stop` while the run is running, `Force stop` while it is
+stopping. Each asks first in a [box](#boxes) -- `Stop this epic?` (`Stop` / `Cancel`), `Close
+every session now?` (`Force stop` / `Cancel`) -- and then does what [`/stop`](#stop) or the
+[`ctrl+c`](#ctrl-c) that forces does.
 
 ### Board {#the-board}
 
