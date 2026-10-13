@@ -510,7 +510,7 @@ def _params(values: Sequence[str]) -> dict[str, str]:
 
 
 #: The limits a budget takes, each as `-p budget.<limit>=`, and nothing else.
-_BUDGET = ("duration", "cost", "output_tokens", "graceful")
+_BUDGET = ("duration", "cost", "output_tokens", "rounds", "graceful")
 
 #: What each unit of a written duration is, in seconds.
 _UNITS = {"w": 604800, "d": 86400, "h": 3600, "m": 60, "s": 1}
@@ -608,6 +608,16 @@ def _tokens(text: str) -> int:
     return int(count)
 
 
+def _rounds(text: str) -> int:
+    """Reads a nonnegative whole number of turns."""
+    said = text.strip().replace("_", "")
+    if not re.fullmatch(r"[0-9]+", said):
+        raise ValueError(
+            f"{text!r} is not a valid round count: expected a whole number"
+        )
+    return int(said)
+
+
 def _flag(text: str) -> bool:
     """A yes or no."""
     said = text.strip().lower()
@@ -623,8 +633,8 @@ def parse_budget(values: Sequence[str]) -> Budget | None:
 
     Args:
       values: What each `-p` was given: of which `budget.duration=`, `budget.cost=`,
-        `budget.output_tokens=` and `budget.graceful=` are read, each at most once across
-        all of them, and the flow's own params left alone.
+        `budget.output_tokens=`, `budget.rounds=` and `budget.graceful=` are read, each at
+        most once across all of them, and the flow's own params left alone.
 
     Returns:
       The budget, or None where no `-p` named a limit.
@@ -651,6 +661,7 @@ def parse_budget(values: Sequence[str]) -> Budget | None:
         "duration": parse_duration,
         "cost": _cost,
         "output_tokens": _tokens,
+        "rounds": _rounds,
         "graceful": _flag,
     }
     fields: dict[str, Any] = {}

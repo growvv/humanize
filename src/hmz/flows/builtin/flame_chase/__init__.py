@@ -1,11 +1,13 @@
-"""Flame chase (flowbench: flame_chase) -- two agents take turns on the same task.
+r"""Flame chase (flowbench: flame_chase) -- two agents take turns on the same task.
 
     hmz exec -f flame_chase -a first_chaser=claude/claude-opus-5:high \
-        -a second_chaser=codex/gpt-5.6-sol:high -p budget.cost=10 "the task"
+        -a second_chaser=codex/gpt-5.6-sol:high \
+        -p budget.cost=10,budget.rounds=2 "the task"
 
-Each turn is a fresh session, so the two share nothing but the repository. The budget ends it
--- the turn that finds it spent raises the budget's `BudgetExceeded` -- and a turn that fails
-ends it with that failure. Whose turn is next is kept, so `--resume` picks up with that chaser.
+Each turn is a fresh session, so the two share nothing but the repository. The time, cost and
+token budgets end it when spent. `budget.rounds` optionally limits the number of agent turns;
+with two rounds, each chaser runs once. Without it, the loop keeps going until another budget
+is spent. Whose turn is next is kept, so `--resume` picks up with that chaser.
 """
 
 from hmz.flows import (
@@ -41,8 +43,11 @@ async def flame_chase(
     assert state is not None  # noqa: S101 -- a resumable flow is always handed its state
     chasers = (agents["first_chaser"], agents["second_chaser"])
     turn = state["turn"] if "turn" in state else 0
-    while True:
+    rounds = state["rounds"] if "rounds" in state else 0
+    round_limit = ctx.budget.rounds
+    while round_limit is None or rounds < round_limit:
         chaser = chasers[turn]
         session = await chaser.spawn()
         await chaser.run(task, session=session, env=envs["workspace"])
         state["turn"] = turn = (turn + 1) % len(chasers)
+        state["rounds"] = rounds = rounds + 1

@@ -1161,6 +1161,7 @@ class Budget(pydantic.BaseModel):   # frozen=True, extra="forbid", ser_json_inf_
     duration: timedelta | None = None     # >= 0
     cost: float | None = None             # >= 0, USD
     output_tokens: int | None = None      # >= 0
+    rounds: int | None = None             # >= 0, agent turns where supported by the flow
     graceful: bool = True
 ```
 
@@ -1169,10 +1170,11 @@ class Budget(pydantic.BaseModel):   # frozen=True, extra="forbid", ser_json_inf_
 | `duration` | Wall-clock time from the start of the call (or turn) the budget belongs to: a deadline. |
 | `cost` | USD spent by turns under it. |
 | `output_tokens` | Tokens written by agents under it. |
+| `rounds` | Agent turns, when a flow uses this limit. `flame_chase` counts each chaser's turn. |
 | `graceful` | `True`: a turn under way when a limit is reached may finish. `False`: it is cut off at once. |
 
-At least one of `duration`, `cost`, `output_tokens` must be set
-(`a budget sets at least one of duration, cost, output_tokens`), and none may be negative;
+At least one of `duration`, `cost`, `output_tokens`, `rounds` must be set
+(`a budget sets at least one of duration, cost, output_tokens, rounds`), and none may be negative;
 otherwise `pydantic.ValidationError`. `Budget(cost=math.inf)` means unlimited and serializes
 as `{"cost": "Infinity"}`.
 
@@ -1711,11 +1713,13 @@ follow-up or steer typed in the assistant's conversation is that line, and the a
 questions show there with their options. The first turn's failure ends
 the run; later failures are reported and the conversation continues.
 
-The loops are each the plainest form of their idea, written to be read and copied. Each runs
-until its budget is spent (`rlar` also until its reviewer says done), and a turn that fails
-ends the run with that failure; none prints, pauses or counts rounds. What a resumable one
-keeps in its state is what its next turn needs: `stateful_ralph` its [session](#sessions-in-state),
-`flame_chase` whose turn is next (`turn`), `rlar` the last review (`notes`, removed when done).
+The loops are each the plainest form of their idea, written to be read and copied. They run
+until their budget is spent (`rlar` also until its reviewer says done), and a turn that fails
+ends the run with that failure; none prints or pauses. What a resumable one keeps in its state
+is what its next turn needs: `stateful_ralph` its [session](#sessions-in-state), `flame_chase`
+whose turn is next (`turn`) and how many turns it has taken (`rounds`), `rlar` the last review
+(`notes`, removed when done). For `flame_chase`, `budget.rounds=2` lets each chaser run once;
+leave it unset to keep alternating until another budget limit is spent.
 
 ### The official flowverse {#the-official-flowverse}
 
@@ -1839,8 +1843,8 @@ Machines and providers: [Machines](/reference/machines).
 
 #### `budget.*`: the run's budget {#p-budget}
 
-Limits `budget.duration`, `budget.cost`, `budget.output_tokens`, `budget.graceful`, each at
-most once across all `-p`, among the flow's params or apart from them:
+Limits `budget.duration`, `budget.cost`, `budget.output_tokens`, `budget.rounds`,
+`budget.graceful`, each at most once across all `-p`, among the flow's params or apart from them:
 `-p rounds=3,budget.cost=5 -p budget.duration=1h`. No flow may declare a param `budget`.
 
 | Limit | Accepted | Examples |
@@ -1848,17 +1852,19 @@ most once across all `-p`, among the flow's params or apart from them:
 | `budget.duration` | seconds (`90`, `1.5`); units `w d h m s`, each at most once, decimals allowed (`1h30m`, `2d`, `1.5h`); ISO 8601 (`PT1H30M`); `HH:MM:SS`. Finite, ≥ 0. | `budget.duration=6h` |
 | `budget.cost` | USD, optional leading `$`; `inf` for none; ≥ 0, not NaN | `budget.cost=$20` |
 | `budget.output_tokens` | whole number, `_` ignored, suffix `k` (×1000) or `m` (×1 000 000), decimals allowed if the result is whole | `budget.output_tokens=1.5m` |
+| `budget.rounds` | nonnegative whole number; `_` ignored | `budget.rounds=2` |
 | `budget.graceful` | `1 true yes on` / `0 false no off` (case-insensitive) | `budget.graceful=false` |
 
 | Input | Message |
 | --- | --- |
-| unknown limit | `-p budget.<limit>: not a limit; one of budget.duration, budget.cost, budget.output_tokens, budget.graceful` |
+| unknown limit | `-p budget.<limit>: not a limit; one of budget.duration, budget.cost, budget.output_tokens, budget.rounds, budget.graceful` |
 | limit twice | `-p: 'budget.<limit>' is given twice` |
 | bad duration | `-p budget.duration: '<v>' is not a duration: use seconds, 1h30m, or ISO 8601 like PT1H30M`; `'<v>' names a unit twice`; `'<v>' is negative`; `'<v>' is not a valid duration: must be finite and not negative`; `duration '<v>' is too long` |
 | bad cost | `-p budget.cost: '<v>' is not a valid USD cost` |
 | bad tokens | `-p budget.output_tokens: '<v>' is not a valid token count: expected a number like 200000 or 200k`; `'<v>' must be a whole number of tokens` |
+| bad rounds | `-p budget.rounds: '<v>' is not a valid round count: expected a whole number` |
 | bad graceful | `-p budget.graceful: '<v>' must be true or false` |
-| no limit set | `-p budget.*: Value error, a budget sets at least one of duration, cost, output_tokens` |
+| no limit set | `-p budget.*: Value error, a budget sets at least one of duration, cost, output_tokens, rounds` |
 | no `budget.*` for a flow that needs one | `<flow> requires a budget: specify with -p budget.cost=...,budget.duration=...,budget.output_tokens=...` |
 
 ### Harness placement {#harness-placement}

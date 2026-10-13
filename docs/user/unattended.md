@@ -96,6 +96,7 @@ A loop runs until something stops it, so every flow but `chat` needs a budget, g
 | `budget.duration` | wall clock: `90s`, `1h30m`, `2d`, or ISO `PT6H` |
 | `budget.cost` | US dollars: `50` or `$50` |
 | `budget.output_tokens` | tokens the agents may write: `200k`, `10m` |
+| `budget.rounds` | agent turns (`2` gives `flame_chase` one turn per chaser) |
 | `budget.graceful` | `false` cuts off the turn under way when a limit is reached. By default it finishes. |
 
 Give at least one limit. When one is reached, the run stops, `hmz exec: stopped -- …` names the

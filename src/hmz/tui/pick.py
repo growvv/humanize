@@ -2203,6 +2203,8 @@ def spent(budget: Budget) -> str:
         caps.append(_units(budget.duration))
     if budget.output_tokens is not None:
         caps.append(f"{thousands(budget.output_tokens)} out")
+    if budget.rounds is not None:
+        caps.append(f"{budget.rounds} rounds")
     if budget.cost is not None and not math.isinf(budget.cost):
         caps.append(money(budget.cost))
     if not caps:
@@ -3061,7 +3063,7 @@ _SETTING = 34
 class Budgeted(BaseModel):
     """What a run of a flow may spend, as the menu asks it.
 
-    A model rather than four rows written by hand, so that the budget is asked with the same
+    A model rather than five rows written by hand, so that the budget is asked with the same
     sheet a flow's own params are asked with: one place that knows how a number is typed
     and read back, and a description apiece saying what each limit means. What comes
     out of it is a :class:`hmz.flows.Budget`, which is where "at least one limit" is settled.
@@ -3078,6 +3080,9 @@ class Budgeted(BaseModel):
     )
     output_tokens: int = Field(
         default=0, ge=0, description="maximum output tokens, 0 for no limit"
+    )
+    rounds: int | None = Field(
+        default=None, ge=0, description="maximum agent turns; empty for no limit"
     )
     graceful: bool = Field(
         default=True,
@@ -3097,8 +3102,12 @@ class Budgeted(BaseModel):
     @model_validator(mode="after")
     def _limits_something(self) -> Budgeted:
         """Refuses a budget that limits nothing, which is no budget."""
-        if not (self.duration or self.cost or self.output_tokens):
-            raise ValueError("set at least one of duration, cost and output_tokens")
+        if not (
+            self.duration or self.cost or self.output_tokens or self.rounds is not None
+        ):
+            raise ValueError(
+                "set at least one of duration, cost, output tokens and rounds"
+            )
         return self
 
     @classmethod
@@ -3118,6 +3127,7 @@ class Budgeted(BaseModel):
             if budget.cost is not None and not math.isinf(budget.cost)
             else 0.0,
             output_tokens=budget.output_tokens or 0,
+            rounds=budget.rounds,
             graceful=budget.graceful,
         )
 
@@ -3129,6 +3139,7 @@ class Budgeted(BaseModel):
             duration=parse_duration(self.duration) if self.duration else None,
             cost=self.cost or None,
             output_tokens=self.output_tokens or None,
+            rounds=self.rounds,
             graceful=self.graceful,
         )
 

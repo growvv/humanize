@@ -157,7 +157,7 @@ host          = ? [user@]host[:port], or an ssh config alias; ssh only ? ;
 workdir       = "/" , ? any text ? ;                       (* "/~" or "/~/…" is home-relative *)
 
 param         = key , "=" , ? any text ? | limit ;
-limit         = "budget." , ( "duration" | "cost" | "output_tokens" | "graceful" ) , "=" , ? value ? ;
+limit         = "budget." , ( "duration" | "cost" | "output_tokens" | "rounds" | "graceful" ) , "=" , ? value ? ;
 ```
 
 #### Items {#items}
@@ -295,12 +295,12 @@ hmz exec: docker:a cannot hold 'box': <why>; using docker:b
 #### The budget (`budget.*`) {#writing-a-budget}
 
 ```text
-budget.duration=<duration> | budget.cost=<usd> | budget.output_tokens=<count> | budget.graceful=<bool>
+budget.duration=<duration> | budget.cost=<usd> | budget.output_tokens=<count> | budget.rounds=<count> | budget.graceful=<bool>
 ```
 
 Each limit at most once across every `-p`, among the flow's params or apart from them:
 `-p rounds=3,budget.cost=5 -p budget.duration=1h`. At least one of `duration`, `cost`,
-`output_tokens` must be set. The first limit reached stops the run. See
+`output_tokens`, `rounds` must be set. The first limit reached stops the run. See
 [Flows › What a run may spend](/reference/flows#what-a-run-may-spend).
 
 | Limit | Accepted | Type |
@@ -399,9 +399,9 @@ Stage 1–2 messages are preceded by the usage block.
 | a `-p` without `key=` | `-p '<item>': expected <key>=<value>` |
 | a `-p` key twice | `-p: '<key>' is given twice` |
 | `budget` with no limit | `-p '<item>': a budget is given a limit at a time, as budget.cost=5` |
-| an unknown `budget.` limit | `-p budget.<limit>: not a limit; one of budget.duration, budget.cost, budget.output_tokens, budget.graceful` |
-| a `budget.` value | `-p budget.duration: '<v>' names a unit twice`, `-p budget.duration: '<v>' is negative`, `-p budget.duration: duration '<v>' is too long`, `-p budget.duration: '<v>' is not a valid duration: must be finite and not negative`, `-p budget.duration: '<v>' is not a duration: use seconds, 1h30m, or ISO 8601 like PT1H30M`, `-p budget.cost: '<v>' is not a valid USD cost`, `-p budget.output_tokens: '<v>' must be a whole number of tokens`, `-p budget.output_tokens: '<v>' is not a valid token count: expected a number like 200000 or 200k`, `-p budget.graceful: '<v>' must be true or false` |
-| a budget that limits nothing | `-p budget.*: Value error, a budget sets at least one of duration, cost, output_tokens` |
+| an unknown `budget.` limit | `-p budget.<limit>: not a limit; one of budget.duration, budget.cost, budget.output_tokens, budget.rounds, budget.graceful` |
+| a `budget.` value | `-p budget.duration: '<v>' names a unit twice`, `-p budget.duration: '<v>' is negative`, `-p budget.duration: duration '<v>' is too long`, `-p budget.duration: '<v>' is not a valid duration: must be finite and not negative`, `-p budget.duration: '<v>' is not a duration: use seconds, 1h30m, or ISO 8601 like PT1H30M`, `-p budget.cost: '<v>' is not a valid USD cost`, `-p budget.output_tokens: '<v>' must be a whole number of tokens`, `-p budget.output_tokens: '<v>' is not a valid token count: expected a number like 200000 or 200k`, `-p budget.rounds: '<v>' is not a valid round count: expected a whole number`, `-p budget.graceful: '<v>' must be true or false` |
+| a budget that limits nothing | `-p budget.*: Value error, a budget sets at least one of duration, cost, output_tokens, rounds` |
 | no such flow | `<ref>: no flow is called '<ref>'` (a path: `<ref>: there is no flow at <ref>`); `<ref>: a flow of local is called @local/<flow> now`; `<ref>: a path starts with ./, / or ~, as ./<ref> does`; `<ref>: not installed -- install it from /flow (flowverse <flowverse>)`; `<ref>: the official flowverse has not been fetched yet -- fetch it from /flow` |
 | a role the flow does not declare | `<flow> has no agent role '<role>'; available roles are '<a>', '<b>'` (`… environment role …` for `-e`; `none` where there are none) |
 | a role the runtime fills | `<flow>: '<role>' is assigned automatically by the runtime and cannot be set with -a`; `<flow>: '<role>' is the workspace the run started in and cannot be set with -e` |

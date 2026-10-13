@@ -65,7 +65,7 @@ def agent(*turns: str | BaseException) -> mock.Mock:
 
 def context(state: dict[str, Any] | None = None) -> mock.Mock:
     """A flow context holding `state`: a dict reads and writes as a `FlowState` does."""
-    return mock.Mock(name="ctx", state=state)
+    return mock.Mock(name="ctx", state=state, budget=mock.Mock(rounds=None))
 
 
 async def call(defined: Defined, task: str, *, ctx: Any, **agents: Any) -> Any:
