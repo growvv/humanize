@@ -34,13 +34,6 @@ __all__ = ["BUNDLE", "ROUTES", "Runs", "refused"]
 #: What an epic's archive is sent as.
 BUNDLE = "application/vnd.hmz.epic+gzip"
 
-#: How a run that has not ended is said, where it is not the run going now: one killed where
-#: it stood, which no record says the end of.
-UNFINISHED = "unfinished"
-
-#: How the run going now is said, before its epic says how it ended.
-RUNNING = "running"
-
 #: The most rows one page of the list holds.
 _PAGE = 200
 
@@ -325,6 +318,8 @@ def row(ran: Ran, *, held: bool, going: bool = False) -> dict[str, Any]:
       held: Whether it is the run a host is going with, which the page follows live.
       going: Whether it is going at all, held by a host or by any other process.
     """
+    from hmz.runtime.epic import ending
+
     first = ran.task.strip().splitlines()[0] if ran.task.strip() else ""
     return {
         "name": ran.name,
@@ -333,7 +328,7 @@ def row(ran: Ran, *, held: bool, going: bool = False) -> dict[str, Any]:
         "task": first[:_TOLD] + ("…" if len(first) > _TOLD else ""),
         "began": ran.began,
         "ended": ran.ended,
-        "how": ran.how or (RUNNING if held or going else UNFINISHED),
+        "how": ending(ran, going=held or going),
         "agents": [
             {"name": one.name or one.agent, "role": one.agent, "runs": one.spec}
             for one in ran.agents
@@ -492,6 +487,8 @@ def spending(runs: list[Ran], days: int, now: datetime.datetime) -> dict[str, An
       first; how the runs ended; and the whole of it. A run that has not said what it spent
       -- still going, or killed before it could -- is counted as a run and nothing else.
     """
+    from hmz.runtime.epic import ending
+
     first = (now - datetime.timedelta(days=days - 1)).date()
     by_day: dict[str, dict[str, Any]] = {
         (first + datetime.timedelta(days=step)).isoformat(): _nothing()
@@ -510,7 +507,7 @@ def spending(runs: list[Ran], days: int, now: datetime.datetime) -> dict[str, An
             whole,
         ):
             _add(into, ran)
-        how = ran.how or UNFINISHED
+        how = ending(ran, going=False)
         ended[how] = ended.get(how, 0) + 1
     return {
         "days": [{"day": day} | _said(one) for day, one in sorted(by_day.items())],
@@ -571,27 +568,26 @@ def _epoch(stamp: str) -> float:
 
 
 def _listed(asked: Asked) -> dict[str, Any]:
+    from hmz.runtime.epic import found
+
     runs = asked.site.runs.all(asked.query.get("workspace", ""))
     held = held_by(runs, asked.site.places.running())
-    status = asked.query.get("status", "")
-    flow = asked.query.get("flow", "")
-    wanted = asked.query.get("q", "").casefold()
-    rows = [
-        row(ran, held=ran.at in held, going=asked.site.runs.going(ran)) for ran in runs
+    went = [
+        (ran, row(ran, held=ran.at in held, going=asked.site.runs.going(ran)))
+        for ran in runs
     ]
     counts: dict[str, int] = {}
-    for one in rows:
+    for _, one in went:
         counts[one["how"]] = counts.get(one["how"], 0) + 1
     shown = [
         one
-        for one in rows
-        if (not status or one["how"] == status)
-        and (not flow or one["flow"] == flow)
-        and (
-            not wanted
-            or any(
-                wanted in str(one[part]).casefold() for part in ("task", "flow", "name")
-            )
+        for ran, one in went
+        if found(
+            ran,
+            one["how"],
+            how=asked.query.get("status", ""),
+            flow=asked.query.get("flow", ""),
+            text=asked.query.get("q", ""),
         )
     ]
     try:
@@ -605,7 +601,7 @@ def _listed(asked: Asked) -> dict[str, Any]:
         "offset": offset,
         "limit": limit,
         "counts": counts,
-        "flows": sorted({one["flow"] for one in rows}),
+        "flows": sorted({ran.flow for ran in runs}),
     }
 
 

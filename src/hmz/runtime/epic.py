@@ -78,13 +78,16 @@ if TYPE_CHECKING:
 
 __all__ = [
     "BACKED",
+    "ENDINGS",
     "JOURNAL",
     "LOCAL",
     "RECORD",
     "RECORDS",
     "RESUME",
+    "RUNNING",
     "SESSIONS",
     "TRACES",
+    "UNFINISHED",
     "Called",
     "Drove",
     "Epic",
@@ -92,8 +95,10 @@ __all__ = [
     "Session",
     "Sub",
     "called",
+    "ending",
     "epics",
     "foreign",
+    "found",
     "going",
     "harbor",
     "harnessed",
@@ -151,6 +156,16 @@ _HELD = ".held"
 #: Where the traces gathered of one run go, inside that run's own directory. A trace of a run
 #: belongs with the run: the sessions it points at and the state it left are already there.
 TRACES = "traces"
+
+#: How an epic is said that has not ended and is still going, before its record says how.
+RUNNING = "running"
+
+#: How one is said that has not ended and is not going: killed where it stood, which no record
+#: says the end of.
+UNFINISHED = "unfinished"
+
+#: Every way an epic can have gone, in the order a list of them is found by.
+ENDINGS = (RUNNING, "done", "failed", "stopped", UNFINISHED)
 
 #: What a session opened as the account this machine is already signed into is written under.
 #: A word rather than the empty string it is configured as: this goes in a directory name and
@@ -613,6 +628,39 @@ def going(epic: Path) -> bool:
     finally:
         os.close(held)
     return False
+
+
+def ending(ran: Ran, *, going: bool) -> str:
+    """How one epic went, as a list of them is found by: one of :data:`ENDINGS`.
+
+    Args:
+      ran: The epic.
+      going: Whether a process holds it now, which only one with no end written down asks.
+    """
+    return ran.how or (RUNNING if going else UNFINISHED)
+
+
+def found(
+    ran: Ran, went: str, *, how: str = "", flow: str = "", text: str = ""
+) -> bool:
+    """Whether one epic is one a search of a list of them finds, every frontend's alike.
+
+    Args:
+      ran: The epic.
+      went: How it went, as :func:`ending` says it.
+      how: Only one that went so, or "" for any.
+      flow: Only one of this flow, as it was named, or "" for any.
+      text: Only one whose task, flow or name holds this, in any case, or "" for any.
+    """
+    wanted = text.casefold()
+    return (
+        (not how or went == how)
+        and (not flow or ran.flow == flow)
+        and (
+            not wanted
+            or any(wanted in one.casefold() for one in (ran.task, ran.flow, ran.name))
+        )
+    )
 
 
 def state(epic: Path, flow: str = "") -> dict[str, Any]:
