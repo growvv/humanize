@@ -83,7 +83,8 @@ def declared(hmz: Any, name: str) -> dict[str, Any]:
             "envs": settings.envs(name),
             "params": settings.params(name),
             "budget": settings.budget(name),
-            "profile": settings.profile(name),
+            "profile_flow": settings.profile_flow(name),
+            "profile_environment": settings.profile_environment(name),
             "backup": settings.backup(name),
         },
     }
@@ -150,7 +151,8 @@ def remembered(hmz: Any, said: dict[str, Any]) -> None:
         cast("dict[str, str]", envs) if isinstance(envs, dict) else None,
         cast("dict[str, Any]", params) if isinstance(params, dict) else None,
         cast("dict[str, Any]", budget) if isinstance(budget, dict) else {},
-        profile=said.get("profile") is True,
+        profile_flow=said.get("profile_flow") is True,
+        profile_environment=said.get("profile_environment") is True,
         backup=cast("list[str] | None", backup),
     )
 

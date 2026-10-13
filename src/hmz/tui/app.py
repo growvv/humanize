@@ -1058,10 +1058,12 @@ class Humanize(App[None]):
         #: with. Beside the params and not inside them: it is a setting of the run rather
         #: than one of the flow's own.
         self._budget: Budget | None = budget_of(self._flow_named)
-        #: Whether a run of it here profiles the programs its agents start, as well as
-        #: tracing them. Beside the budget, and remembered with it: like what a run may
-        #: spend, it is a thing about a run of this flow rather than one of its params.
-        self._profile = self.settings.profile(self._flow_named)
+        #: Whether a run of it here profiles the flow's own Python, and the programs its
+        #: agents start, as well as tracing them. Beside the budget, and remembered with it:
+        #: like what a run may spend, each is a thing about a run of this flow rather than
+        #: one of its params.
+        self._profile_flow = self.settings.profile_flow(self._flow_named)
+        self._profile_environment = self.settings.profile_environment(self._flow_named)
         #: The backup targets an epic of it here goes to, by name, or None for the defaults
         #: as it starts: chosen on `/flow`, and remembered with the budget per flow.
         self._backup = self.settings.backup(self._flow_named)
@@ -3286,7 +3288,8 @@ class Humanize(App[None]):
                 self.settings.flows(),
                 envs=self._envs if holding else None,
                 budget=self._budget if holding else None,
-                profile=self._profile if holding else False,
+                profile_flow=self._profile_flow if holding else False,
+                profile_environment=self._profile_environment if holding else False,
                 backup=self._backup if holding else None,
                 unavailable=frozenset(unavailable),
                 running=running,
@@ -3382,7 +3385,8 @@ class Humanize(App[None]):
                 agents,
                 envs,
                 budget=budget_of(flow),
-                profile=self.settings.profile(flow),
+                profile_flow=self.settings.profile_flow(flow),
+                profile_environment=self.settings.profile_environment(flow),
                 backup=self.settings.backup(flow),
             )
         if set(agents) != set(declared.roles):
@@ -3405,7 +3409,8 @@ class Humanize(App[None]):
             envs,
             params,
             budget,
-            self.settings.profile(flow),
+            self.settings.profile_flow(flow),
+            self.settings.profile_environment(flow),
             self.settings.backup(flow),
         )
 
@@ -3428,7 +3433,8 @@ class Humanize(App[None]):
             chosen.envs,
             chosen.params,
             chosen.budget,
-            chosen.profile,
+            chosen.profile_flow,
+            chosen.profile_environment,
             chosen.backup,
         ) == (
             self._flow_named,
@@ -3436,7 +3442,8 @@ class Humanize(App[None]):
             self._envs,
             self._params,
             self._budget,
-            self._profile,
+            self._profile_flow,
+            self._profile_environment,
             self._backup,
         )
         if chosen.flow != self._flow_named:
@@ -3449,7 +3456,8 @@ class Humanize(App[None]):
         self._flow_named = chosen.flow
         self._models, self._envs = dict(chosen.agents), dict(chosen.envs)
         self._params, self._budget = chosen.params, chosen.budget
-        self._profile = chosen.profile
+        self._profile_flow = chosen.profile_flow
+        self._profile_environment = chosen.profile_environment
         self._backup = chosen.backup
         self.settings.remember(
             chosen.flow,
@@ -3464,7 +3472,8 @@ class Humanize(App[None]):
             json.loads(chosen.budget.model_dump_json())
             if chosen.budget is not None
             else {},
-            profile=chosen.profile,
+            profile_flow=chosen.profile_flow,
+            profile_environment=chosen.profile_environment,
             # None is the defaults, left for whatever they are when an epic starts.
             backup=chosen.backup,
         )
@@ -3864,7 +3873,8 @@ class Humanize(App[None]):
         except ValueError:
             self._budget = None
         # Profiled as the run it goes on from was, so its trace is one trace of one kind.
-        self._profile = ran.profile
+        self._profile_flow = ran.profile_flow
+        self._profile_environment = ran.profile_environment
         self._backup = self.settings.backup(ran.flow)
         self.show(
             f"[dim]resuming {escape(ran.name)}: running {escape(ran.flow)} "
@@ -3938,7 +3948,8 @@ class Humanize(App[None]):
             budget=json.loads(self._budget.model_dump_json())
             if self._budget is not None
             else None,
-            profile=self._profile,
+            profile_flow=self._profile_flow,
+            profile_environment=self._profile_environment,
             backup=self._backed_up(),
             resume=str(resume) if resume is not None else False,
         )

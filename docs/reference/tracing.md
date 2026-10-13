@@ -262,7 +262,7 @@ with ids moved, is `409` rather than some other span.
 ## Profiling a run {#profiling-a-run}
 
 A run asked to be profiled -- [`hmz exec --profile`](/reference/cli#hmz-exec),
-`profile=True` to `Hmz().run`, `Runner` or `Link.start`, or the **profiling** row of the
+`profile=True` to `Hmz().run`, `Runner` or `Link.start`, or the **profile environment** row of the
 [`/flow`](/reference/tui#roles-page) menu, beside the budget -- samples every descendant process of
 the process running the flow, every 0.05 s (psutil, on a daemon thread), from the epic's opening until it closes.
 Sampling never stops a run: an unreadable process is skipped, a machine whose processes

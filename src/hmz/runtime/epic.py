@@ -316,6 +316,9 @@ class Ran(NamedTuple):
       picked_up: The epic this run was picked up from, by name, or "".
       profile: Whether the run was asked to profile the programs its agents started as well
         as trace them; False for a run written before a run could be asked.
+      profile_flow: Whether the run was asked to profile the flow's own Python.
+      profile_environment: Whether the run was asked to profile the programs its agents
+        started.
       spent: What the run spent as its budget counted it, as JSON -- `cost` in dollars,
         `output_tokens` and `seconds` -- written as it ended, or None for a run still going
         or one killed before it could say.
@@ -343,6 +346,8 @@ class Ran(NamedTuple):
     budget: dict[str, Any] | None = None
     picked_up: str = ""
     profile: bool = False
+    profile_flow: bool = False
+    profile_environment: bool = False
     spent: dict[str, Any] | None = None
     backup: tuple[str, ...] = ()
     backed: dict[str, dict[str, Any]] = {}  # noqa: RUF012 -- a NamedTuple's default
@@ -1302,6 +1307,8 @@ def read(epic: Path) -> Ran | None:
         budget=cast("dict[str, Any]", budget) if isinstance(budget, dict) else None,
         picked_up=str(began.get("picked_up") or ""),
         profile=bool(began.get("profile")),
+        profile_flow=bool(began.get("profile_flow")),
+        profile_environment=bool(began.get("profile_environment")),
         spent=(
             {
                 key: usage[key]
